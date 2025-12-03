@@ -3,26 +3,29 @@
     --bg-dark: #0B0E14;
     --bg-card: #151A23;
     --bg-card-hover: #1E2532;
-    --primary: #FF4D00; /* Vibrant Orange */
+    --primary: #FF4D00;
+    /* Vibrant Orange */
     --primary-hover: #FF6724;
-    --secondary: #0066FF; /* Electric Blue */
-    --accent: #00E5FF; /* Cyan */
+    --secondary: #0066FF;
+    /* Electric Blue */
+    --accent: #00E5FF;
+    /* Cyan */
     --success: #00CC66;
     --danger: #FF3333;
-    
+
     --text-main: #FFFFFF;
     --text-muted: #94A3B8;
     --border: #2D3748;
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #FF4D00 0%, #FF8800 100%);
     --gradient-dark: linear-gradient(180deg, rgba(11, 14, 20, 0) 0%, #0B0E14 100%);
-    
+
     /* Shadows */
     --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
     --shadow-glow: 0 0 20px rgba(255, 77, 0, 0.15);
-    
+
     /* Spacing */
     --container-width: 1200px;
     --header-height: 80px;
@@ -322,8 +325,15 @@ ul {
     font-size: 0.8rem;
 }
 
-.lakers { background: #552583; color: #FDB927; }
-.warriors { background: #1D428A; color: #FFC72C; }
+.lakers {
+    background: #552583;
+    color: #FDB927;
+}
+
+.warriors {
+    background: #1D428A;
+    color: #FFC72C;
+}
 
 .prediction-pill {
     background: rgba(255, 255, 255, 0.1);
@@ -746,25 +756,53 @@ ul {
 
 /* Animations */
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 @keyframes float {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0); }
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
 }
 
 @keyframes scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 /* Responsive */
@@ -774,48 +812,245 @@ ul {
         text-align: center;
         padding-top: 2rem;
     }
-    
-    .hero-content p, .hero-buttons, .hero-stats {
+
+    .hero-content p,
+    .hero-buttons,
+    .hero-stats {
         margin-left: auto;
         margin-right: auto;
     }
-    
+
     .hero-buttons {
         justify-content: center;
     }
-    
+
     .hero-stats {
         justify-content: center;
     }
-    
+
     .featured-card {
         grid-template-columns: 1fr;
     }
-    
+
     .game-stats-viz {
         border-left: none;
         border-top: 1px solid var(--border);
     }
-    
+
     .footer-content {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    .nav-links, .nav-actions {
+
+    .nav-links,
+    .nav-actions {
         display: none;
     }
-    
+
     .mobile-menu-btn {
         display: block;
     }
-    
+
     .hero-content h1 {
         font-size: 2.5rem;
     }
-    
+
     .newsletter-form {
         flex-direction: column;
     }
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    margin: auto;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-glow);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close-modal {
+    color: var(--text-muted);
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.3s;
+    background: rgba(0, 0, 0, 0.5);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-modal:hover {
+    color: var(--text-main);
+    background: rgba(255, 77, 0, 0.8);
+}
+
+.modal-banner {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-banner::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(11, 14, 20, 0.2), var(--bg-card));
+}
+
+.modal-header {
+    padding: 0 2rem;
+    margin-top: -60px;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.modal-matchup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.modal-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100px;
+}
+
+.modal-vs {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    background: var(--bg-dark);
+    padding: 0.5rem;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-stats {
+    padding: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.odds-table-container {
+    padding: 2rem;
+}
+
+.odds-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.odds-table th {
+    text-align: left;
+    padding: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+}
+
+.odds-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.odds-table tr:last-child td {
+    border-bottom: none;
+}
+
+.bookmaker-logo {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Scrollbar for modal */
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
