@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtVision | Premium NBA Predictions & Analytics</title>
+    <meta name="description" content="Top-tier NBA predictions, live scores, and betting analytics.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fa-solid fa-basketball"></i>
+                <span>Court<span class="highlight">Vision</span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#games">Games</a></li>
+                <li><a href="#predictions">Predictions</a></li>
+                <li><a href="#analytics">Analytics</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="btn btn-secondary" id="api-key-btn" title="Enter API Key"><i
+                        class="fa-solid fa-key"></i></button>
+                <button class="btn btn-secondary">Log In</button>
+                <button class="btn btn-primary">Get Premium</button>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <header id="home" class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="live-dot"></span> Live Analysis
+                </div>
+                <h1>Dominate the Court with <br><span class="gradient-text">AI-Powered Predictions</span></h1>
+                <p>Get real-time NBA insights, win probability models, and expert betting tips before the tip-off.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-lg">View Today's Picks <i
+                            class="fa-solid fa-arrow-right"></i></button>
+                    <button class="btn btn-outline btn-lg">How It Works</button>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">87%</span>
+                        <span class="stat-label">Accuracy Rate</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">10k+</span>
+                        <span class="stat-label">Active Users</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">24/7</span>
+                        <span class="stat-label">Live Updates</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <!-- Abstract basketball court visualization -->
+                <div class="court-graphic">
+                    <div class="floating-card card-1">
+                        <div class="team-logos">
+                            <div class="team-logo lakers">LAL</div>
+                            <span>vs</span>
+                            <div class="team-logo warriors">GSW</div>
+                        </div>
+                        <div class="prediction-pill">LAL +4.5</div>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Win Prob: 62%</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Live Ticker -->
+        <div class="live-ticker-container">
+            <div class="ticker-label">LIVE SCORES</div>
+            <div class="ticker-wrapper">
+                <div class="ticker-track" id="live-ticker">
+                    <!-- Ticker items injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <main class="main-content">
+
+            <!-- Featured Matchup -->
+            <section id="games" class="section featured-section">
+                <div class="section-header">
+                    <h2>Game of the Night</h2>
+                    <a href="#" class="view-all">View All Games</a>
+                </div>
+                <div class="featured-card" id="featured-game">
+                    <!-- Injected via JS -->
+                </div>
+            </section>
+
+            <!-- Predictions Grid -->
+            <section id="predictions" class="section predictions-section">
+                <div class="section-header">
+                    <h2>Latest Predictions</h2>
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="high-confidence">High Confidence 🔥</button>
+                        <button class="filter-btn" data-filter="underdog">Underdogs 🐶</button>
+                    </div>
+                </div>
+                <div class="predictions-grid" id="predictions-grid">
+                    <!-- Injected via JS -->
+                </div>
+            </section>
+
+            <!-- Newsletter -->
+            <section class="newsletter-section">
+                <div class="newsletter-content">
+                    <h2>Don't Miss a Pick</h2>
+                    <p>Join 10,000+ sharp bettors getting daily insights delivered to their inbox.</p>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="Enter your email address">
+                        <button type="submit" class="btn btn-primary">Subscribe</button>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <i class="fa-solid fa-basketball"></i>
+                        <span>Court<span class="highlight">Vision</span></span>
+                    </div>
+                    <p>The ultimate destination for NBA analytics and sports predictions.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h3>Platform</h3>
+                        <a href="#">Predictions</a>
+                        <a href="#">Live Scores</a>
+                        <a href="#">Pricing</a>
+                    </div>
+                    <div class="link-group">
+                        <h3>Company</h3>
+                        <a href="#">About Us</a>
+                        <a href="#">Contact</a>
+                        <a href="#">Terms</a>
+                    </div>
+                    <div class="link-group">
+                        <h3>Social</h3>
+                        <a href="#">Twitter</a>
+                        <a href="#">Instagram</a>
+                        <a href="#">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 CourtVision Analytics. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
