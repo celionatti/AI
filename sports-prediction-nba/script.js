@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Soccer Logic: Mix of H2H (Win/Draw), Totals (Over/Under), and Simulated Cards
                 const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
                 const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
-                
+
                 // Randomly decide which market to highlight for variety
                 const marketChoice = Math.random();
 
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const outcomes = h2hMarket.outcomes;
                     outcomes.sort((a, b) => a.price - b.price);
                     const bestOutcome = outcomes[0];
-                    
+
                     if (bestOutcome.name === 'Draw') {
                         pick = 'Draw';
                         analysis = 'Match expected to be tight with few clear chances.';
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // NBA Logic: Spread, Moneyline, Totals
                 const spreadMarket = bookmaker.markets.find(m => m.key === 'spreads');
                 const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
-                
+
                 const marketChoice = Math.random();
 
                 if (marketChoice < 0.6 && spreadMarket) {
@@ -347,8 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (oddsData.length > 0) {
             const game = oddsData[0];
             featuredGame = {
-                home: { name: game.home_team, code: getTeamAbbr(game.home_team), record: '-', color: '#333' },
-                away: { name: game.away_team, code: getTeamAbbr(game.away_team), record: '-', color: '#333' },
+                home: { name: game.home_team, code: getTeamAbbr(game.home_team), record: '-', color: '#333', banner: '' },
+                away: { name: game.away_team, code: getTeamAbbr(game.away_team), record: '-', color: '#333', banner: '' },
                 time: new Date(game.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 venue: currentSport.startsWith('soccer') ? 'Stadium' : 'Arena',
                 odds: { spread: 'See Picks', total: '-', moneyline: '-' },
@@ -358,9 +358,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     { label: 'Power Ranking', value: 50, homeVal: '-', awayVal: '-' }
                 ]
             };
+
+            // Fetch banners for featured game teams
+            fetchTeamDetails(game.home_team).then(details => {
+                if (details?.banner && featuredGame) {
+                    featuredGame.home.banner = details.banner;
+                    renderFeaturedGame(); // Re-render with banner
+                }
+            });
+            fetchTeamDetails(game.away_team).then(details => {
+                if (details?.banner && featuredGame) {
+                    featuredGame.away.banner = details.banner;
+                    renderFeaturedGame(); // Re-render with banner
+                }
+            });
         } else {
             featuredGame = mockFeaturedGame;
         }
+
+        // Fetch banners for all predictions asynchronously
+        predictions.forEach((pred, index) => {
+            fetchTeamDetails(pred.details.home).then(details => {
+                if (details?.banner) {
+                    predictions[index].homeBanner = details.banner;
+                    // Re-render just this card
+                    const card = document.querySelector(`[data-prediction-id="${pred.id}"]`);
+                    if (card) {
+                        card.style.backgroundImage = `url('${details.banner}')`;
+                    }
+                }
+            });
+        });
     }
 
     function renderAll() {
@@ -407,8 +435,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
 
+        // Create banner style if available
+        const homeBanner = home.banner ? `url('${home.banner}')` : 'none';
+        const awayBanner = away.banner ? `url('${away.banner}')` : 'none';
+        const bannerStyle = home.banner || away.banner ?
+            `background-image: linear-gradient(to right, rgba(11, 14, 20, 0.85), rgba(11, 14, 20, 0.85)), ${homeBanner}, ${awayBanner}; background-size: cover, 50% 100%, 50% 100%; background-position: center, left, right; background-repeat: no-repeat;` :
+            '';
+
         container.innerHTML = `
-            <div class="game-info">
+            <div class="game-info" style="${bannerStyle}">
                 <div class="game-header">
                     <span><i class="fa-regular fa-clock"></i> ${time}</span>
                     <span><i class="fa-solid fa-location-dot"></i> ${venue}</span>
@@ -465,7 +500,16 @@ document.addEventListener('DOMContentLoaded', () => {
         filtered.forEach(pred => {
             const card = document.createElement('div');
             card.className = 'prediction-card';
+            card.setAttribute('data-prediction-id', pred.id);
             card.onclick = () => openModal(pred); // Add click handler
+
+            // Add banner background if available
+            if (pred.homeBanner) {
+                card.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.9), rgba(11, 14, 20, 0.9)), url('${pred.homeBanner}')`;
+                card.style.backgroundSize = 'cover';
+                card.style.backgroundPosition = 'center';
+            }
+
             card.innerHTML = `
                 <div class="card-header">
                     <span>${LEAGUES[currentSport]?.name || 'Sport'} • Today</span>
@@ -534,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sportQuery = currentSport.startsWith('soccer') ? 'Soccer' : 'Basketball';
             const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(teamName)}`);
             const data = await res.json();
-            
+
             if (data.teams && data.teams.length > 0) {
                 // Filter by sport to avoid name collisions (e.g. "Giants")
                 const team = data.teams.find(t => t.strSport === sportQuery) || data.teams[0];
@@ -557,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openModal(prediction) {
         const modal = document.getElementById('details-modal');
         const modalBody = document.getElementById('modal-body');
-        
+
         if (!modal || !modalBody) return;
 
         // Show loading state
@@ -570,12 +614,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fetch extra details for Home Team
         const homeDetails = await fetchTeamDetails(details.home);
-        
+
         // Prepare Odds Comparison
         // Find the original game object to get all bookmakers
         const gameData = allGamesData.find(g => g.id === prediction.id);
         let oddsTableRows = '';
-        
+
         if (gameData && gameData.bookmakers) {
             oddsTableRows = gameData.bookmakers.map(bm => {
                 // Determine which market to show in table based on prediction type or default
