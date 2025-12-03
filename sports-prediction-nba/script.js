@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY); // Legacy
     let currentSport = 'basketball_nba'; // Default
 
+    // League Configuration
+    const LEAGUES = {
+        'basketball_nba': { name: 'NBA', icon: 'fa-basketball' },
+        'soccer_epl': { name: 'Premier League', icon: 'fa-futbol' },
+        'soccer_spain_la_liga': { name: 'La Liga', icon: 'fa-futbol' },
+        'soccer_germany_bundesliga': { name: 'Bundesliga', icon: 'fa-futbol' },
+        'soccer_italy_serie_a': { name: 'Serie A', icon: 'fa-futbol' },
+        'soccer_france_ligue_one': { name: 'Ligue 1', icon: 'fa-futbol' }
+    };
+
     // State
     let liveScores = [];
     let predictions = [];
@@ -15,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const mockLiveScores = [
         { home: 'LAL', away: 'GSW', score: '102-98', time: 'Q4 2:30', isLive: true },
         { home: 'BOS', away: 'MIA', score: '45-42', time: 'Q2 5:15', isLive: true },
-        { home: 'NYK', away: 'BKN', score: '0-0', time: '7:00 PM', isLive: false },
-        { home: 'DEN', away: 'PHX', score: '112-108', time: 'Final', isLive: false },
-        { home: 'DAL', away: 'HOU', score: '0-0', time: '8:30 PM', isLive: false }
+        { home: 'RMA', away: 'BAR', score: '1-1', time: '75\'', isLive: true },
+        { home: 'MCI', away: 'LIV', score: '2-2', time: 'Final', isLive: false },
+        { home: 'BAY', away: 'DOR', score: '0-0', time: '20:30', isLive: false }
     ];
 
     const mockFeaturedGame = {
@@ -66,6 +76,28 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'underdog',
             analysis: 'Heat resting key starters tonight.',
             details: { home: 'Miami Heat', away: 'Orlando Magic', bookmaker: 'BetMGM' }
+        },
+        {
+            id: 'mock4',
+            home: 'ARS',
+            away: 'CHE',
+            pick: 'Draw',
+            odds: '+260',
+            confidence: 65,
+            type: 'all',
+            analysis: 'London derby likely to be a tight affair.',
+            details: { home: 'Arsenal', away: 'Chelsea', bookmaker: 'Bet365' }
+        },
+        {
+            id: 'mock5',
+            home: 'RMA',
+            away: 'ATM',
+            pick: 'Over 4.5 Cards',
+            odds: '-120',
+            confidence: 80,
+            type: 'high-confidence',
+            analysis: 'High intensity derby match, expect many bookings.',
+            details: { home: 'Real Madrid', away: 'Atletico Madrid', bookmaker: 'Unibet' }
         }
     ];
 
@@ -94,13 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Sport Selector Buttons
-        const sportBtns = document.querySelectorAll('.sport-btn');
-        sportBtns.forEach(btn => {
-            btn.addEventListener('click', async () => {
-                sportBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentSport = btn.dataset.sport;
+        // Sport Selector Dropdown
+        const sportSelect = document.getElementById('sport-select');
+        if (sportSelect) {
+            sportSelect.addEventListener('change', async (e) => {
+                currentSport = e.target.value;
 
                 // Reset data
                 liveScores = [];
@@ -111,10 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (apiKey) {
                     await fetchData();
                 } else {
-                    useMockData(); // Or handle sport switch in mock data if needed
+                    useMockData();
                 }
             });
-        });
+        }
 
         // API Key Button
         const apiKeyBtn = document.getElementById('api-key-btn');
@@ -162,7 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         try {
             // Determine markets based on sport
-            const markets = currentSport === 'soccer_epl' ? 'h2h' : 'h2h,spreads';
+            // NBA: spreads, totals, h2h
+            // Soccer: h2h, totals (Over/Under)
+            const markets = currentSport.startsWith('soccer') ? 'h2h,totals' : 'spreads,totals,h2h';
 
             // 1. Fetch Odds (Upcoming Games)
             const oddsUrl = `https://api.the-odds-api.com/v4/sports/${currentSport}/odds/?apiKey=${apiKey}&regions=us&markets=${markets}&oddsFormat=american`;
@@ -217,30 +249,80 @@ document.addEventListener('DOMContentLoaded', () => {
             let pick = '';
             let odds = '';
             let isFavorite = false;
+            let analysis = '';
+            let type = 'all';
 
-            if (currentSport === 'soccer_epl') {
-                // Soccer: Moneyline (H2H)
+            // Advanced Prediction Logic
+            if (currentSport.startsWith('soccer')) {
+                // Soccer Logic: Mix of H2H (Win/Draw), Totals (Over/Under), and Simulated Cards
                 const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
-                if (!h2hMarket) return null;
+                const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
+                
+                // Randomly decide which market to highlight for variety
+                const marketChoice = Math.random();
 
-                // Simple logic: Pick the lowest odds (Favorite)
-                const outcomes = h2hMarket.outcomes;
-                outcomes.sort((a, b) => a.price - b.price); // Ascending order (lowest odds first)
-                const bestOutcome = outcomes[0]; // Favorite
+                if (marketChoice < 0.4 && h2hMarket) {
+                    // 40% chance: Win/Draw
+                    const outcomes = h2hMarket.outcomes;
+                    outcomes.sort((a, b) => a.price - b.price);
+                    const bestOutcome = outcomes[0];
+                    
+                    if (bestOutcome.name === 'Draw') {
+                        pick = 'Draw';
+                        analysis = 'Match expected to be tight with few clear chances.';
+                    } else {
+                        pick = `${getTeamAbbr(bestOutcome.name)} ML`;
+                        analysis = `${bestOutcome.name} favored to win based on recent form.`;
+                    }
+                    odds = bestOutcome.price > 0 ? `+${bestOutcome.price}` : bestOutcome.price;
+                    isFavorite = true;
 
-                pick = `${getTeamAbbr(bestOutcome.name)} ML`;
-                odds = bestOutcome.price > 0 ? `+${bestOutcome.price}` : bestOutcome.price;
-                isFavorite = true; // Since we picked lowest odds
+                } else if (marketChoice < 0.8 && totalsMarket) {
+                    // 40% chance: Over/Under 2.5
+                    const outcome = totalsMarket.outcomes.find(o => o.point === 2.5) || totalsMarket.outcomes[0];
+                    if (outcome) {
+                        pick = `${outcome.name} ${outcome.point} Goals`;
+                        odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                        analysis = outcome.name === 'Over' ? 'High scoring game expected.' : 'Defensive battle expected.';
+                        isFavorite = outcome.price < 0;
+                    }
+                } else {
+                    // 20% chance: Simulated "Bookings" (Cards)
+                    // Since API doesn't provide cards, we simulate a "High Intensity" match
+                    pick = 'Over 4.5 Cards';
+                    odds = '-115';
+                    analysis = 'High intensity matchup, expect aggressive play and bookings.';
+                    isFavorite = true;
+                }
 
             } else {
-                // NBA: Spreads
+                // NBA Logic: Spread, Moneyline, Totals
                 const spreadMarket = bookmaker.markets.find(m => m.key === 'spreads');
-                if (!spreadMarket) return null;
+                const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
+                
+                const marketChoice = Math.random();
 
-                const outcome = spreadMarket.outcomes[0];
-                pick = `${getTeamAbbr(outcome.name)} ${outcome.point > 0 ? '+' : ''}${outcome.point}`;
-                odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
-                isFavorite = outcome.price < 0;
+                if (marketChoice < 0.6 && spreadMarket) {
+                    // 60% chance: Spread
+                    const outcome = spreadMarket.outcomes[0];
+                    pick = `${getTeamAbbr(outcome.name)} ${outcome.point > 0 ? '+' : ''}${outcome.point}`;
+                    odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                    analysis = `Spread value on ${getTeamAbbr(outcome.name)}.`;
+                    isFavorite = outcome.price < 0;
+                } else if (totalsMarket) {
+                    // 40% chance: Totals
+                    const outcome = totalsMarket.outcomes[0];
+                    pick = `${outcome.name} ${outcome.point}`;
+                    odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                    analysis = outcome.name === 'Over' ? 'Fast paced game expected.' : 'Slow pace expected.';
+                    isFavorite = outcome.price < 0;
+                }
+            }
+
+            // Fallback if logic failed
+            if (!pick) {
+                pick = 'See Details';
+                odds = 'N/A';
             }
 
             return {
@@ -251,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 odds: odds,
                 confidence: Math.floor(Math.random() * (95 - 60) + 60),
                 type: isFavorite ? 'high-confidence' : 'underdog',
-                analysis: `Odds provided by ${bookmaker.title}.`,
+                analysis: analysis,
                 details: { // Store full details for modal
                     home: game.home_team,
                     away: game.away_team,
@@ -268,8 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 home: { name: game.home_team, code: getTeamAbbr(game.home_team), record: '-', color: '#333' },
                 away: { name: game.away_team, code: getTeamAbbr(game.away_team), record: '-', color: '#333' },
                 time: new Date(game.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                venue: currentSport === 'soccer_epl' ? 'Premier League Stadium' : 'NBA Arena',
-                odds: { spread: 'See Predictions', total: '-', moneyline: '-' },
+                venue: currentSport.startsWith('soccer') ? 'Stadium' : 'Arena',
+                odds: { spread: 'See Picks', total: '-', moneyline: '-' },
                 stats: [
                     { label: 'Win Probability', value: 50, homeVal: '50%', awayVal: '50%' },
                     { label: 'Public Betting', value: 50, homeVal: '-', awayVal: '-' },
@@ -386,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.onclick = () => openModal(pred); // Add click handler
             card.innerHTML = `
                 <div class="card-header">
-                    <span>${currentSport === 'soccer_epl' ? 'EPL' : 'NBA'} • Today</span>
+                    <span>${LEAGUES[currentSport]?.name || 'Sport'} • Today</span>
                     ${pred.confidence >= 80 ? '<span style="color: var(--primary)">🔥 Hot Pick</span>' : ''}
                 </div>
                 <div class="card-matchup">
@@ -418,69 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Modal Logic
-    function openModal(prediction) {
-        const modal = document.getElementById('details-modal');
-        const modalBody = document.getElementById('modal-body');
-
-        if (!modal || !modalBody) return;
-
-        const details = prediction.details;
-        const date = new Date(details.commence_time || Date.now()).toLocaleString();
-
-        modalBody.innerHTML = `
-            <div class="modal-header">
-                <div style="color: var(--primary); font-weight: 600; margin-bottom: 0.5rem">${currentSport === 'soccer_epl' ? 'Premier League' : 'NBA'}</div>
-                <div class="modal-matchup">
-                    <div class="modal-team">
-                        <div class="team-logo" style="width: 60px; height: 60px; font-size: 1.2rem; background: #2D3748">${getTeamAbbr(details.home)}</div>
-                        <span style="font-weight: 700; margin-top: 0.5rem">${details.home}</span>
-                    </div>
-                    <div class="modal-vs">VS</div>
-                    <div class="modal-team">
-                        <div class="team-logo" style="width: 60px; height: 60px; font-size: 1.2rem; background: #2D3748">${getTeamAbbr(details.away)}</div>
-                        <span style="font-weight: 700; margin-top: 0.5rem">${details.away}</span>
-                    </div>
-                </div>
-                <div style="color: var(--text-muted); margin-top: 1rem"><i class="fa-regular fa-clock"></i> ${date}</div>
-            </div>
-
-            <div class="modal-stats">
-                <h3 style="margin-bottom: 1rem; font-size: 1.1rem">Prediction Analysis</h3>
-                <div class="stat-row">
-                    <span style="color: var(--text-muted)">Recommended Pick</span>
-                    <span style="font-weight: 700; color: var(--primary)">${prediction.pick}</span>
-                </div>
-                <div class="stat-row">
-                    <span style="color: var(--text-muted)">Odds</span>
-                    <span style="font-weight: 600">${prediction.odds}</span>
-                </div>
-                <div class="stat-row">
-                    <span style="color: var(--text-muted)">Confidence Model</span>
-                    <span style="font-weight: 600; color: var(--success)">${prediction.confidence}%</span>
-                </div>
-                <div class="stat-row">
-                    <span style="color: var(--text-muted)">Source Bookmaker</span>
-                    <span>${details.bookmaker}</span>
-                </div>
-            </div>
-
-            <div class="modal-stats">
-                <h3 style="margin-bottom: 1rem; font-size: 1.1rem">Key Insights</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6">
-                    ${prediction.analysis} The AI model favors ${prediction.pick} based on recent form and head-to-head statistics. 
-                    ${currentSport === 'basketball_nba' ? 'Pace and efficiency metrics suggest a favorable matchup.' : 'Possession and xG (Expected Goals) metrics align with this outcome.'}
-                </p>
-            </div>
-
-            <button class="btn btn-primary" style="width: 100%" onclick="document.getElementById('details-modal').classList.remove('show'); setTimeout(() => document.getElementById('details-modal').style.display = 'none', 300);">Close Analysis</button>
-        `;
-
-        modal.style.display = 'flex';
-        // Small delay to allow display:flex to apply before adding class for animation
-        setTimeout(() => modal.classList.add('show'), 10);
-    }
-
     // Helper: Map full team names to abbreviations
     function getTeamAbbr(name) {
         if (!name) return 'UNK';
@@ -494,12 +513,16 @@ document.addEventListener('DOMContentLoaded', () => {
             'Oklahoma City Thunder': 'OKC', 'Orlando Magic': 'ORL', 'Philadelphia 76ers': 'PHI', 'Phoenix Suns': 'PHX',
             'Portland Trail Blazers': 'POR', 'Sacramento Kings': 'SAC', 'San Antonio Spurs': 'SAS', 'Toronto Raptors': 'TOR',
             'Utah Jazz': 'UTA', 'Washington Wizards': 'WAS',
-            // EPL
+            // EPL & Other Leagues (Basic mapping, can be expanded)
             'Arsenal': 'ARS', 'Aston Villa': 'AVL', 'Bournemouth': 'BOU', 'Brentford': 'BRE', 'Brighton and Hove Albion': 'BHA',
             'Chelsea': 'CHE', 'Crystal Palace': 'CRY', 'Everton': 'EVE', 'Fulham': 'FUL', 'Liverpool': 'LIV',
             'Luton Town': 'LUT', 'Manchester City': 'MCI', 'Manchester United': 'MUN', 'Newcastle United': 'NEW',
             'Nottingham Forest': 'NFO', 'Sheffield United': 'SHU', 'Tottenham Hotspur': 'TOT', 'West Ham United': 'WHU',
-            'Wolverhampton Wanderers': 'WOL', 'Burnley': 'BUR'
+            'Wolverhampton Wanderers': 'WOL', 'Burnley': 'BUR',
+            'Real Madrid': 'RMA', 'Barcelona': 'BAR', 'Atletico Madrid': 'ATM', 'Sevilla': 'SEV',
+            'Bayern Munich': 'BAY', 'Borussia Dortmund': 'DOR', 'Bayer Leverkusen': 'B04',
+            'Juventus': 'JUV', 'AC Milan': 'ACM', 'Inter Milan': 'INT', 'Napoli': 'NAP',
+            'Paris Saint-Germain': 'PSG', 'Marseille': 'OM', 'Lyon': 'OL'
         };
         return map[name] || name.substring(0, 3).toUpperCase();
     }
@@ -508,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchTeamDetails(teamName) {
         try {
             // Use TheSportsDB free API (search by team name)
-            const sportQuery = currentSport === 'soccer_epl' ? 'Soccer' : 'Basketball';
+            const sportQuery = currentSport.startsWith('soccer') ? 'Soccer' : 'Basketball';
             const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(teamName)}`);
             const data = await res.json();
             
@@ -555,12 +578,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (gameData && gameData.bookmakers) {
             oddsTableRows = gameData.bookmakers.map(bm => {
-                const marketKey = currentSport === 'soccer_epl' ? 'h2h' : 'spreads';
+                // Determine which market to show in table based on prediction type or default
+                // For simplicity, we show H2H for soccer, Spreads for NBA
+                const marketKey = currentSport.startsWith('soccer') ? 'h2h' : 'spreads';
                 const market = bm.markets.find(m => m.key === marketKey);
                 if (!market) return '';
 
                 let homeOdd, awayOdd;
-                if (currentSport === 'soccer_epl') {
+                if (currentSport.startsWith('soccer')) {
                     // H2H
                     homeOdd = market.outcomes.find(o => o.name === details.home)?.price;
                     awayOdd = market.outcomes.find(o => o.name === details.away)?.price;
@@ -588,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalBody.innerHTML = `
             <div class="modal-banner" style="${bannerStyle}"></div>
             <div class="modal-header">
-                <div style="color: var(--primary); font-weight: 600; margin-bottom: 0.5rem; text-align: center;">${currentSport === 'soccer_epl' ? 'Premier League' : 'NBA'}</div>
+                <div style="color: var(--primary); font-weight: 600; margin-bottom: 0.5rem; text-align: center;">${LEAGUES[currentSport]?.name || 'Sport'}</div>
                 <div class="modal-matchup">
                     <div class="modal-team">
                         <div class="team-logo" style="width: 60px; height: 60px; font-size: 1.2rem; background: #2D3748">
