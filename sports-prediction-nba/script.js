@@ -484,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper: Map full team names to abbreviations
     function getTeamAbbr(name) {
         if (!name) return 'UNK';
-        // Basic mapping for major teams, fallback to substring
         const map = {
             // NBA
             'Atlanta Hawks': 'ATL', 'Boston Celtics': 'BOS', 'Brooklyn Nets': 'BKN', 'Charlotte Hornets': 'CHA',
@@ -495,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'Oklahoma City Thunder': 'OKC', 'Orlando Magic': 'ORL', 'Philadelphia 76ers': 'PHI', 'Phoenix Suns': 'PHX',
             'Portland Trail Blazers': 'POR', 'Sacramento Kings': 'SAC', 'San Antonio Spurs': 'SAS', 'Toronto Raptors': 'TOR',
             'Utah Jazz': 'UTA', 'Washington Wizards': 'WAS',
-            // EPL (Common names)
+            // EPL
             'Arsenal': 'ARS', 'Aston Villa': 'AVL', 'Bournemouth': 'BOU', 'Brentford': 'BRE', 'Brighton and Hove Albion': 'BHA',
             'Chelsea': 'CHE', 'Crystal Palace': 'CRY', 'Everton': 'EVE', 'Fulham': 'FUL', 'Liverpool': 'LIV',
             'Luton Town': 'LUT', 'Manchester City': 'MCI', 'Manchester United': 'MUN', 'Newcastle United': 'NEW',
@@ -503,5 +502,148 @@ document.addEventListener('DOMContentLoaded', () => {
             'Wolverhampton Wanderers': 'WOL', 'Burnley': 'BUR'
         };
         return map[name] || name.substring(0, 3).toUpperCase();
+    }
+
+    // TheSportsDB Integration
+    async function fetchTeamDetails(teamName) {
+        try {
+            // Use TheSportsDB free API (search by team name)
+            const sportQuery = currentSport === 'soccer_epl' ? 'Soccer' : 'Basketball';
+            const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(teamName)}`);
+            const data = await res.json();
+            
+            if (data.teams && data.teams.length > 0) {
+                // Filter by sport to avoid name collisions (e.g. "Giants")
+                const team = data.teams.find(t => t.strSport === sportQuery) || data.teams[0];
+                return {
+                    stadium: team.strStadium,
+                    location: team.strStadiumLocation,
+                    banner: team.strTeamBanner,
+                    logo: team.strTeamBadge,
+                    description: team.strDescriptionEN ? team.strDescriptionEN.substring(0, 150) + '...' : 'No description available.'
+                };
+            }
+            return null;
+        } catch (e) {
+            console.warn('Failed to fetch team details:', e);
+            return null;
+        }
+    }
+
+    // Modal Logic
+    async function openModal(prediction) {
+        const modal = document.getElementById('details-modal');
+        const modalBody = document.getElementById('modal-body');
+        
+        if (!modal || !modalBody) return;
+
+        // Show loading state
+        modalBody.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem">Loading detailed analytics...</p></div>';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+
+        const details = prediction.details;
+        const date = new Date(details.commence_time || Date.now()).toLocaleString();
+
+        // Fetch extra details for Home Team
+        const homeDetails = await fetchTeamDetails(details.home);
+        
+        // Prepare Odds Comparison
+        // Find the original game object to get all bookmakers
+        const gameData = allGamesData.find(g => g.id === prediction.id);
+        let oddsTableRows = '';
+        
+        if (gameData && gameData.bookmakers) {
+            oddsTableRows = gameData.bookmakers.map(bm => {
+                const marketKey = currentSport === 'soccer_epl' ? 'h2h' : 'spreads';
+                const market = bm.markets.find(m => m.key === marketKey);
+                if (!market) return '';
+
+                let homeOdd, awayOdd;
+                if (currentSport === 'soccer_epl') {
+                    // H2H
+                    homeOdd = market.outcomes.find(o => o.name === details.home)?.price;
+                    awayOdd = market.outcomes.find(o => o.name === details.away)?.price;
+                } else {
+                    // Spreads
+                    const homeOutcome = market.outcomes.find(o => o.name === details.home);
+                    const awayOutcome = market.outcomes.find(o => o.name === details.away);
+                    homeOdd = homeOutcome ? `${homeOutcome.point > 0 ? '+' : ''}${homeOutcome.point} (${homeOutcome.price})` : '-';
+                    awayOdd = awayOutcome ? `${awayOutcome.point > 0 ? '+' : ''}${awayOutcome.point} (${awayOutcome.price})` : '-';
+                }
+
+                return `
+                    <tr>
+                        <td><div class="bookmaker-logo">${bm.title}</div></td>
+                        <td>${homeOdd || '-'}</td>
+                        <td>${awayOdd || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        const bannerStyle = homeDetails?.banner ? `background-image: url('${homeDetails.banner}');` : 'background: var(--gradient-primary);';
+        const stadiumInfo = homeDetails ? `<i class="fa-solid fa-location-dot"></i> ${homeDetails.stadium}, ${homeDetails.location}` : '';
+
+        modalBody.innerHTML = `
+            <div class="modal-banner" style="${bannerStyle}"></div>
+            <div class="modal-header">
+                <div style="color: var(--primary); font-weight: 600; margin-bottom: 0.5rem; text-align: center;">${currentSport === 'soccer_epl' ? 'Premier League' : 'NBA'}</div>
+                <div class="modal-matchup">
+                    <div class="modal-team">
+                        <div class="team-logo" style="width: 60px; height: 60px; font-size: 1.2rem; background: #2D3748">
+                            ${homeDetails?.logo ? `<img src="${homeDetails.logo}" style="width:100%; height:100%; object-fit:contain;">` : getTeamAbbr(details.home)}
+                        </div>
+                        <span style="font-weight: 700; margin-top: 0.5rem">${details.home}</span>
+                    </div>
+                    <div class="modal-vs">VS</div>
+                    <div class="modal-team">
+                        <div class="team-logo" style="width: 60px; height: 60px; font-size: 1.2rem; background: #2D3748">${getTeamAbbr(details.away)}</div>
+                        <span style="font-weight: 700; margin-top: 0.5rem">${details.away}</span>
+                    </div>
+                </div>
+                <div style="color: var(--text-muted); margin-top: 1rem; text-align: center;">
+                    <i class="fa-regular fa-clock"></i> ${date} <br>
+                    ${stadiumInfo}
+                </div>
+            </div>
+
+            <div class="modal-stats" style="margin-top: 2rem;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem">AI Prediction Analysis</h3>
+                <div class="stat-row">
+                    <span style="color: var(--text-muted)">Recommended Pick</span>
+                    <span style="font-weight: 700; color: var(--primary)">${prediction.pick}</span>
+                </div>
+                <div class="stat-row">
+                    <span style="color: var(--text-muted)">Best Odds</span>
+                    <span style="font-weight: 600">${prediction.odds}</span>
+                </div>
+                <div class="stat-row">
+                    <span style="color: var(--text-muted)">Confidence Model</span>
+                    <span style="font-weight: 600; color: var(--success)">${prediction.confidence}%</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-top: 1rem;">
+                    ${prediction.analysis} ${homeDetails ? homeDetails.description : ''}
+                </p>
+            </div>
+
+            <div class="odds-table-container">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem">Odds Comparison</h3>
+                <table class="odds-table">
+                    <thead>
+                        <tr>
+                            <th>Bookmaker</th>
+                            <th>${getTeamAbbr(details.home)}</th>
+                            <th>${getTeamAbbr(details.away)}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${oddsTableRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin-top: 2rem;" onclick="document.getElementById('details-modal').classList.remove('show'); setTimeout(() => document.getElementById('details-modal').style.display = 'none', 300);">Close Analysis</button>
+        `;
     }
 });
