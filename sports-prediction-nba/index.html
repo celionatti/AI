@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CourtVision | Premium NBA Predictions & Analytics</title>
-    <meta name="description" content="Top-tier NBA predictions, live scores, and betting analytics.">
+    <title>CourtVision | Premium NBA & Football Predictions</title>
+    <meta name="description"
+        content="Top-tier sports predictions, live scores, and betting analytics for NBA and Premier League.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,8 +52,9 @@
                 <div class="hero-badge">
                     <span class="live-dot"></span> Live Analysis
                 </div>
-                <h1>Dominate the Court with <br><span class="gradient-text">AI-Powered Predictions</span></h1>
-                <p>Get real-time NBA insights, win probability models, and expert betting tips before the tip-off.</p>
+                <h1>Dominate the Game with <br><span class="gradient-text">AI-Powered Predictions</span></h1>
+                <p>Get real-time NBA & Premier League insights, win probability models, and expert betting tips before
+                    the game starts.</p>
                 <div class="hero-buttons">
                     <button class="btn btn-primary btn-lg">View Today's Picks <i
                             class="fa-solid fa-arrow-right"></i></button>
@@ -110,7 +112,12 @@
             <section id="games" class="section featured-section">
                 <div class="section-header">
                     <h2>Game of the Night</h2>
-                    <a href="#" class="view-all">View All Games</a>
+                    <div class="sport-selector">
+                        <button class="sport-btn active" data-sport="basketball_nba"><i
+                                class="fa-solid fa-basketball"></i> NBA</button>
+                        <button class="sport-btn" data-sport="soccer_epl"><i class="fa-regular fa-futbol"></i> Premier
+                            League</button>
+                    </div>
                 </div>
                 <div class="featured-card" id="featured-game">
                     <!-- Injected via JS -->
@@ -145,6 +152,16 @@
             </section>
 
         </main>
+
+        <!-- Details Modal -->
+        <div id="details-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div id="modal-body">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="footer">
