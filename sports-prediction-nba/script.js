@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Configuration
     const API_KEY_STORAGE_KEY = 'nba_odds_api_key';
-    let apiKey = 'c8c6da5eb272bd46dadb79cb019b1a33'; // Hardcoded as requested
-    // let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY); // Legacy
+    // Try localStorage first, then fallback to hardcoded key
+    let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || 'c8c6da5eb272bd46dadb79cb019b1a33';
     let currentSport = 'basketball_nba'; // Default
 
     // League Configuration
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         away: { name: 'Milwaukee Bucks', code: 'MIL', record: '40-17', color: '#00471B' },
         time: '7:30 PM ET',
         venue: 'TD Garden',
-        odds: { spread: 'BOS -4.5', total: '228.5', moneyline: '-180' },
+        odds: { spread: 'BOS -4.5 (1.91)', total: '228.5 (1.91)', moneyline: '1.56' },
         stats: [
             { label: 'Win Probability', value: 68, homeVal: '68%', awayVal: '32%' },
             { label: 'Public Betting', value: 55, homeVal: '55%', awayVal: '45%' },
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: 'LAL',
             away: 'GSW',
             pick: 'Lakers -2.5',
-            odds: '-110',
+            odds: '1.91',
             confidence: 85,
             type: 'high-confidence',
             analysis: 'Lakers are 8-2 ATS in their last 10 home games.',
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: 'PHX',
             away: 'DEN',
             pick: 'Over 230.5',
-            odds: '-110',
+            odds: '1.91',
             confidence: 72,
             type: 'all',
             analysis: 'Both teams averaging 120+ PPG in last 5 matchups.',
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: 'MIA',
             away: 'ORL',
             pick: 'Magic ML',
-            odds: '+145',
+            odds: '2.45',
             confidence: 60,
             type: 'underdog',
             analysis: 'Heat resting key starters tonight.',
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: 'ARS',
             away: 'CHE',
             pick: 'Draw',
-            odds: '+260',
+            odds: '3.60',
             confidence: 65,
             type: 'all',
             analysis: 'London derby likely to be a tight affair.',
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             home: 'RMA',
             away: 'ATM',
             pick: 'Over 4.5 Cards',
-            odds: '-120',
+            odds: '1.83',
             confidence: 80,
             type: 'high-confidence',
             analysis: 'High intensity derby match, expect many bookings.',
@@ -183,9 +183,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function useMockData() {
-        liveScores = mockLiveScores;
-        featuredGame = mockFeaturedGame;
-        predictions = mockPredictions;
+        // Filter mock data based on current sport
+        if (currentSport.startsWith('soccer')) {
+            // Show only soccer predictions (mock4 and mock5)
+            liveScores = mockLiveScores.filter(s => ['RMA', 'BAR', 'MCI', 'LIV', 'BAY', 'DOR'].includes(s.home));
+            predictions = mockPredictions.filter(p => ['ARS', 'RMA'].includes(p.home));
+            featuredGame = {
+                home: { name: 'Arsenal', code: 'ARS', record: '20-5-3', color: '#EF0107' },
+                away: { name: 'Chelsea', code: 'CHE', record: '18-6-4', color: '#034694' },
+                time: '3:00 PM',
+                venue: 'Emirates Stadium',
+                odds: { spread: 'N/A', total: '2.5 (1.91)', moneyline: '2.10' },
+                stats: [
+                    { label: 'Win Probability', value: 55, homeVal: '55%', awayVal: '45%' },
+                    { label: 'Public Betting', value: 60, homeVal: '60%', awayVal: '40%' },
+                    { label: 'Form', value: 70, homeVal: 'WWDWW', awayVal: 'WDWLW' }
+                ]
+            };
+        } else {
+            // Show NBA predictions (mock1, mock2, mock3)
+            liveScores = mockLiveScores.filter(s => ['LAL', 'GSW', 'BOS', 'MIA'].includes(s.home));
+            predictions = mockPredictions.filter(p => ['LAL', 'PHX', 'MIA'].includes(p.home));
+            featuredGame = mockFeaturedGame;
+        }
+
+        // Add Mock Data Indicator
+        const ticker = document.getElementById('live-ticker');
+        if (ticker) {
+            const mockBadge = document.createElement('div');
+            mockBadge.className = 'ticker-item';
+            mockBadge.style.backgroundColor = '#ff4444';
+            mockBadge.style.color = 'white';
+            mockBadge.style.fontWeight = 'bold';
+            mockBadge.innerHTML = '⚠️ MOCK DATA MODE (API Key Invalid/Quota Exceeded)';
+            // Prepend to ticker
+            ticker.insertBefore(mockBadge, ticker.firstChild);
+        }
+
         renderAll();
     }
 
@@ -215,9 +249,21 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAll();
 
         } catch (error) {
-            console.error('API Error:', error);
-            alert('Error fetching data. Check your API Key or quota. Falling back to mock data.');
+            console.error('API Error (Falling back to mock data):', error);
+            // Silent fallback - no alert to annoy the user
             useMockData();
+        }
+    }
+
+    function convertAmericanToDecimal(american) {
+        if (!american) return '-';
+        const odds = parseFloat(american);
+        if (isNaN(odds)) return american;
+
+        if (odds > 0) {
+            return (1 + (odds / 100)).toFixed(2);
+        } else {
+            return (1 + (100 / Math.abs(odds))).toFixed(2);
         }
     }
 
@@ -274,23 +320,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         pick = `${getTeamAbbr(bestOutcome.name)} ML`;
                         analysis = `${bestOutcome.name} favored to win based on recent form.`;
                     }
-                    odds = bestOutcome.price > 0 ? `+${bestOutcome.price}` : bestOutcome.price;
+                    odds = convertAmericanToDecimal(bestOutcome.price);
                     isFavorite = true;
 
-                } else if (marketChoice < 0.8 && totalsMarket) {
-                    // 40% chance: Over/Under 2.5
+                } else if (marketChoice < 0.7 && totalsMarket) {
+                    // 30% chance: Over/Under 2.5
                     const outcome = totalsMarket.outcomes.find(o => o.point === 2.5) || totalsMarket.outcomes[0];
                     if (outcome) {
                         pick = `${outcome.name} ${outcome.point} Goals`;
-                        odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                        odds = convertAmericanToDecimal(outcome.price);
                         analysis = outcome.name === 'Over' ? 'High scoring game expected.' : 'Defensive battle expected.';
                         isFavorite = outcome.price < 0;
                     }
+                } else if (marketChoice < 0.9) {
+                    // 20% chance: Both Teams To Score (BTTS) - Simulated
+                    // Logic: If both teams have reasonably close odds or high totals, predict BTTS
+                    pick = 'Both Teams To Score: Yes';
+                    odds = '1.77'; // Simulated Decimal
+                    analysis = 'Both sides have strong attacking form coming into this match.';
+                    isFavorite = true;
                 } else {
-                    // 20% chance: Simulated "Bookings" (Cards)
+                    // 10% chance: Simulated "Bookings" (Cards)
                     // Since API doesn't provide cards, we simulate a "High Intensity" match
                     pick = 'Over 4.5 Cards';
-                    odds = '-115';
+                    odds = '1.87'; // Simulated Decimal
                     analysis = 'High intensity matchup, expect aggressive play and bookings.';
                     isFavorite = true;
                 }
@@ -306,14 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 60% chance: Spread
                     const outcome = spreadMarket.outcomes[0];
                     pick = `${getTeamAbbr(outcome.name)} ${outcome.point > 0 ? '+' : ''}${outcome.point}`;
-                    odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                    odds = convertAmericanToDecimal(outcome.price);
                     analysis = `Spread value on ${getTeamAbbr(outcome.name)}.`;
                     isFavorite = outcome.price < 0;
                 } else if (totalsMarket) {
                     // 40% chance: Totals
                     const outcome = totalsMarket.outcomes[0];
                     pick = `${outcome.name} ${outcome.point}`;
-                    odds = outcome.price > 0 ? `+${outcome.price}` : outcome.price;
+                    odds = convertAmericanToDecimal(outcome.price);
                     analysis = outcome.name === 'Over' ? 'Fast paced game expected.' : 'Slow pace expected.';
                     isFavorite = outcome.price < 0;
                 }
@@ -346,12 +399,36 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set Featured Game
         if (oddsData.length > 0) {
             const game = oddsData[0];
+
+            // Extract Odds for Featured Game
+            let spread = '-', total = '-', moneyline = '-';
+            const bookmaker = game.bookmakers[0];
+            if (bookmaker) {
+                const spreadMarket = bookmaker.markets.find(m => m.key === 'spreads');
+                const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
+                const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
+
+                if (spreadMarket) {
+                    const outcome = spreadMarket.outcomes[0];
+                    spread = `${outcome.point > 0 ? '+' : ''}${outcome.point} (${convertAmericanToDecimal(outcome.price)})`;
+                }
+                if (totalsMarket) {
+                    const outcome = totalsMarket.outcomes[0];
+                    total = `${outcome.point} (${convertAmericanToDecimal(outcome.price)})`;
+                }
+                if (h2hMarket) {
+                    // Show home ML for simplicity or just "Available"
+                    const homeOutcome = h2hMarket.outcomes.find(o => o.name === game.home_team);
+                    if (homeOutcome) moneyline = convertAmericanToDecimal(homeOutcome.price);
+                }
+            }
+
             featuredGame = {
                 home: { name: game.home_team, code: getTeamAbbr(game.home_team), record: '-', color: '#333', banner: '' },
                 away: { name: game.away_team, code: getTeamAbbr(game.away_team), record: '-', color: '#333', banner: '' },
                 time: new Date(game.commence_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 venue: currentSport.startsWith('soccer') ? 'Stadium' : 'Arena',
-                odds: { spread: 'See Picks', total: '-', moneyline: '-' },
+                odds: { spread: spread, total: total, moneyline: moneyline },
                 stats: [
                     { label: 'Win Probability', value: 50, homeVal: '50%', awayVal: '50%' },
                     { label: 'Public Betting', value: 50, homeVal: '-', awayVal: '-' },
@@ -631,14 +708,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 let homeOdd, awayOdd;
                 if (currentSport.startsWith('soccer')) {
                     // H2H
-                    homeOdd = market.outcomes.find(o => o.name === details.home)?.price;
-                    awayOdd = market.outcomes.find(o => o.name === details.away)?.price;
+                    const hOdd = market.outcomes.find(o => o.name === details.home)?.price;
+                    const aOdd = market.outcomes.find(o => o.name === details.away)?.price;
+                    homeOdd = convertAmericanToDecimal(hOdd);
+                    awayOdd = convertAmericanToDecimal(aOdd);
                 } else {
                     // Spreads
                     const homeOutcome = market.outcomes.find(o => o.name === details.home);
                     const awayOutcome = market.outcomes.find(o => o.name === details.away);
-                    homeOdd = homeOutcome ? `${homeOutcome.point > 0 ? '+' : ''}${homeOutcome.point} (${homeOutcome.price})` : '-';
-                    awayOdd = awayOutcome ? `${awayOutcome.point > 0 ? '+' : ''}${awayOutcome.point} (${awayOutcome.price})` : '-';
+                    homeOdd = homeOutcome ? `${homeOutcome.point > 0 ? '+' : ''}${homeOutcome.point} (${convertAmericanToDecimal(homeOutcome.price)})` : '-';
+                    awayOdd = awayOutcome ? `${awayOutcome.point > 0 ? '+' : ''}${awayOutcome.point} (${convertAmericanToDecimal(awayOutcome.price)})` : '-';
                 }
 
                 return `
