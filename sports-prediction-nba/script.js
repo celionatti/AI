@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configuration
     const API_KEY_STORAGE_KEY = 'nba_odds_api_key';
     // Try localStorage first, then fallback to hardcoded key
-    let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || 'c8c6da5eb272bd46dadb79cb019b1a33';
+    let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || 'c58340792034fc05c895a9888ff24a1a';
     let currentSport = 'basketball_nba'; // Default
 
     // League Configuration
